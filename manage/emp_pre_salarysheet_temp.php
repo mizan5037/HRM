@@ -35,7 +35,7 @@ if (isset($_POST['create_temp'])) {
 	if (isset($_POST['action']) && $_POST['action'] != '') {
 		if ($_POST['action'] == 'add') {
 			if (isset($_POST['dept_id_c']) && $_POST['dept_id_c'] != '') {
-				if (process_temp($department,$unit)) {
+				if (process_temp($department,$unit,$month,$year)) {
 					create_emp_temp($month, $year,$department,$unit);
 					display_notification('Created List Successfully.');
 				}else{
@@ -45,7 +45,7 @@ if (isset($_POST['create_temp'])) {
 				display_error('Select Department');
 			}
 		}else{
-			delete_emp_temp($department,$unit);
+			delete_emp_temp($department,$unit,$month,$year);
 			display_notification('Deleted Successfully.');
 		}
 	}

@@ -176,12 +176,9 @@ function total_leave_day($month, $year)
 
 		$months  = strlen($month) == 2 ? $month : '0' . $month;
 		$date = $year . '-' . $months . '%';
-
 		$month2 = $month + 1;
 		$month2 = strlen($month2) == 2 ? $month2 : '0' . $month2;
 		$date2 = $year . '-' . $month2 . '%';
-
-
 		$d = cal_days_in_month(CAL_GREGORIAN, $months, $year);
 		$d  = strlen($d) == 2 ? $d : '0' . $d;
 		$lastdate = $year . '-' . $months . '-' . $d;
@@ -226,9 +223,6 @@ function total_absent($month, $year)
 	db_query($sql, _('Sorry to over write data..!'));
 }
 
-
-
-
 function overtime_hr($month, $year)
 {
 	// echo $month,$year;
@@ -242,14 +236,13 @@ function overtime_hr($month, $year)
 		$sql = "INSERT INTO temp_ot_sheet_total SELECT emp_id, SUM(IF(hours_no> 2,(hours_no-2),0)),$month,$year FROM 0_daily_attendance WHERE att_date LIKE '" . $date . "' AND dayname(att_date) != 'Friday' AND emp_id>0 AND proximity_id>0 GROUP BY emp_id";
 		db_query($sql, _('Sorry to over write data..!'));
 
+		//$sql = "UPDATE 0_presalary_sheet ps SET ps.total_ot_friday = (SELECT hour FROM temp_ot_sheet_total WHERE emp_id = ps.emp_id) WHERE ps.month = " . $month . " AND ps.year = " . $year;
+		//db_query($sql, _('Sorry to over write data..!'));
+
+	
+
 		$sql = "INSERT INTO total_ot_with_friday SELECT emp_id,SUM(get_working_hour_tmp(emp_id,timestamp(att_date,EntryTime),timestamp(exit_date,ExitTime))),$month,$year as ot_hr FROM 0_daily_attendance WHERE att_date LIKE '$date' AND dayname(att_date)= 'Friday' AND emp_id>0 AND AttdStatus < 8 AND proximity_id>0 GROUP BY emp_id ";
 		db_query($sql, _('Sorry to over write data..!'));
-
-
-		$sql = "UPDATE temp_ot_sheet_total t INNER JOIN total_ot_with_friday f ON t.emp_id = f.emp_id SET t.hour = t.hour + f.hour";
-		db_query($sql, _('Sorry to over write data..!'));
-
-
 
 		$sql = "UPDATE 0_presalary_sheet ps SET ps.total_overtime_hr_Less_2 = (SELECT hour FROM temp_overtime_l_2 WHERE emp_id = ps.emp_id),ps.less_than_two_hour_friday = (SELECT hour FROM temp_overtime_l_2 WHERE emp_id = ps.emp_id) WHERE ps.month = " . $month . " AND ps.year = " . $year;
 		db_query($sql, _('Sorry to over write data..!'));
@@ -280,20 +273,14 @@ function overtime_hr($month, $year)
 		$sql = "UPDATE 0_presalary_sheet ps SET ps.total_overtime_hr = (SELECT time FROM temp_overtime_hr WHERE emp_id = ps.emp_id),ps.total_ot_friday = (SELECT hour FROM temp_ot_sheet_total WHERE emp_id = ps.emp_id) WHERE ps.month = " . $month . " AND ps.year = " . $year;
 		db_query($sql, _('Sorry to over write data..!'));
 
-
-
-
+		$sql = "UPDATE 0_presalary_sheet ps SET ps.total_ot_friday = ps.total_ot_friday+(SELECT hour FROM total_ot_with_friday WHERE emp_id = ps.emp_id) WHERE ps.month = " . $month . " AND ps.year = " . $year;
+		db_query($sql, _('Sorry to over write data..!'));
 
 		$sql = "TRUNCATE TABLE temp_overtime_hr";
 		db_query($sql, _('Sorry to over write data..!'));
 
-		
-
 		$sql = "TRUNCATE TABLE temp_overtime_friday";
 		db_query($sql, _('Sorry to over write data..!'));
-
-		
-
 
 		$sql = "INSERT INTO temp_rate SELECT emp_id,IFNULL(round((emp_pmt_tmp_amt/104),2),0) rate FROM 0_emp_pmt_tmp WHERE emp_pmt_str_id = 1";
 		db_query($sql, _('Sorry to over write data..!'));

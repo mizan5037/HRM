@@ -9,8 +9,10 @@
 |   daily_attendance_db.inc                              |
 \=======================================================*/
 
-function delete_emp_temp($department='',$unit='')
+function delete_emp_temp($department='',$unit='',$month='',$year='')
 {
+
+	$dept = $department;
 	$cnt = 0;
 	if ($department != '') {
 		$department = ' e.department_id ='.$department;
@@ -34,41 +36,34 @@ function delete_emp_temp($department='',$unit='')
 			$exSql = ' WHERE '.$unit;
 		}
 	}
-	$sql = "DELETE tp FROM temp_presalary_sheet tp INNER JOIN 0_employee e ON tp.emp_id=e.emp_id ".$exSql;
+	if($month !='' && $year != ''){
+		$month_year = " AND tp.month=$month and tp.year = $year";
+	}
+	else
+	   $month_year='';
+	$sql = "DELETE tp FROM temp_presalary_sheet tp INNER JOIN 0_employee e ON tp.emp_id=e.emp_id ".$exSql." $month_year";
+
+	
+	db_query($sql, _('Failde to Update Data.'));
+
+	$sql = "DELETE  FROM temp_pre_salary_process where dept_id=$dept and month = $month and year = $year ";
 	db_query($sql, _('Failde to Update Data.'));
 }
+	
 
-function process_temp($department='',$unit='')
+	
+
+
+function process_temp($department='',$unit='',$month='',$year='')
 {
-	$cnt = 0;
-	if ($department != '') {
-		$department = ' e.department_id ='.$department;
-		$cnt++;
-		$dp = true;
-	}
-	if ($unit != '') {
-		$unit = ' e.UnitID ='.$unit;
-		$cnt++;
-		$un = true;
-	}
-	$exSql = '';
-	if ($cnt>0) {
-		$exSql = ' WHERE ';
-		if ($dp && $un) {
-			$exSql = ' WHERE '.$department.' AND '.$unit;
-		}elseif ($dp) {
-			$exSql = ' WHERE '.$department;
-		}else{
-			$exSql = ' WHERE '.$unit;
-		}
-	}
-	$sql = "SELECT count(*) as total FROM (SELECT * FROM temp_presalary_sheet) ps LEFT JOIN 0_employee e ON ps.emp_id = e.emp_id ".$exSql;
+	
+	$sql = "SELECT count(*) as total FROM   temp_pre_salary_process where dept_id=$department and month=$month and year=$year ";
 	$total = db_fetch(db_query($sql, _('Failde to Update Data.')));
 	if ($total["total"]  > 0) {
 		return false;
-	}else{
-		return true;
 	}
+	else 
+		return true;
 }
 //-----------------------------------------------------------------
 function write_pre_salarysheet_temp($emp_id = false, $wd=0, $tl='', $ta='', $tot='', $tot2='', $wop='', $rt='',$atb='',$ea='',$ec='',$abj=0,$aar=0,$sal=0,$pd=0,$month=0,$year=0)
@@ -168,6 +163,7 @@ function get_pre_salarysheet_temp($card='',$department='',$unit='',$month,$year)
 
 function create_emp_temp($month = false, $year = false,$department,$unit){
 	// echo $month,$year;
+	$dept = $department;
 	if($month != false && year !=false) {
 		$months  = strlen($month) == 2 ? $month : '0'.$month;
 		$date = $year.'-'.$months.'%';
@@ -198,11 +194,17 @@ function create_emp_temp($month = false, $year = false,$department,$unit){
 	}
 
 		$sql = "INSERT INTO temp_presalary_sheet (emp_id,salary,attn_bonus, month, year) SELECT DISTINCT(emp_id),emp_salary,emp_atten_bonus,".$month.",".$year." FROM 0_employee WHERE inactive = 0 AND ((!date_format(emp_releasedate,'%C') < ".$month." AND !date_format(emp_releasedate,'%Y') < ".$year.") OR (date_format(emp_releasedate,'%C') = 0 AND date_format(emp_releasedate,'%Y') = 0)) ".$exSql;
-		 display_notification($sql);
+		// display_notification($sql);
 		db_query($sql, _('Sorry to over write data..!'));
 
 		$sql = "UPDATE temp_presalary_sheet ps SET ps.abs_b_join = (SELECT IFNULL(DAY(emp_hiredate)-1,0) FROM 0_employee WHERE emp_hiredate LIKE '".$date."' AND ps.emp_id = emp_id), abs_a_release = (SELECT IFNULL( DAY(LAST_DAY(emp_releasedate))-DAY(DATE_SUB(emp_releasedate, INTERVAL 1 DAY)),0) FROM 0_employee WHERE emp_releasedate LIKE '".$date."' AND ps.emp_id = emp_id)";
 		// display_notification($sql);
 		db_query($sql, _('Sorry to over write data..!'));
+
+		$sql = "INSERT INTO temp_pre_salary_process (dept_id, month, year) VALUES ($dept," . db_escape($month) . ", " . db_escape($year) . ")";
+		db_query($sql, _('Sorry to over write data..!'));
 	}
 }
+
+		
+

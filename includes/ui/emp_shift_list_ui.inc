@@ -48,6 +48,9 @@ function Add_delete($label, $name) {
     echo "<tr><td class='label'>$label</td><td>";
     if($gender==0){
         echo "<input type='radio' name=$name value='add'>Add";
+        echo "<input type='radio' name=$name value='delete'>Delete";
+
+
     }
     echo "</td></tr>";
 }
